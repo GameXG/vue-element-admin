@@ -14,6 +14,7 @@
       </router-link>
     </scroll-pane>
     <ul v-show="visible" :style="{left:left+'px',top:top+'px'}" class="contextmenu">
+      <li @click="refreshSelectedTag(selectedTag)">{{ $t('tagsView.refresh') }}</li>
       <li @click="closeSelectedTag(selectedTag)">{{ $t('tagsView.close') }}</li>
       <li @click="closeOthersTags">{{ $t('tagsView.closeOthers') }}</li>
       <li @click="closeAllTags">{{ $t('tagsView.closeAll') }}</li>
@@ -72,7 +73,7 @@ export default {
       if (!route) {
         return false
       }
-      this.$store.dispatch('addVisitedViews', route)
+      this.$store.dispatch('addView', route)
     },
     moveToCurrentTag() {
       const tags = this.$refs.tag
@@ -85,10 +86,19 @@ export default {
         }
       })
     },
+    refreshSelectedTag(view) {
+      this.$store.dispatch('delCachedView', view).then(() => {
+        const { fullPath } = view
+
+        this.$router.replace({
+          path: '/redirect' + fullPath
+        })
+      })
+    },
     closeSelectedTag(view) {
-      this.$store.dispatch('delVisitedViews', view).then((views) => {
+      this.$store.dispatch('delView', view).then(({ visitedViews }) => {
         if (this.isActive(view)) {
-          const latestView = views.slice(-1)[0]
+          const latestView = visitedViews.slice(-1)[0]
           if (latestView) {
             this.$router.push(latestView)
           } else {
@@ -123,11 +133,12 @@ export default {
 
 <style rel="stylesheet/scss" lang="scss" scoped>
 .tags-view-container {
+  height: 34px;
+  width: 100%;
+  background: #fff;
+  border-bottom: 1px solid #d8dce5;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
   .tags-view-wrapper {
-    background: #fff;
-    height: 34px;
-    border-bottom: 1px solid #d8dce5;
-    box-shadow: 0 1px 3px 0 rgba(0, 0, 0, .12), 0 0 3px 0 rgba(0, 0, 0, .04);
     .tags-view-item {
       display: inline-block;
       position: relative;
@@ -142,6 +153,9 @@ export default {
       margin-top: 4px;
       &:first-of-type {
         margin-left: 15px;
+      }
+      &:last-of-type {
+        margin-right: 15px;
       }
       &.active {
         background-color: #42b983;
